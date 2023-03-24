@@ -1,17 +1,58 @@
-pub struct Error;
+pub struct Command {
+    pub path: String,
+}
+
+impl Default for Command {
+    fn default() -> Self {
+        Self {
+            path: "docker-compose".to_string(),
+        }
+    }
+}
+
+impl Command {
+    pub fn list_services(&self) -> Result<Vec<Service>, crate::Error> {
+        let output = std::process::Command::new(&self.path)
+            .arg("ps")
+            .arg("--format")
+            .arg("json")
+            .output()
+            .map_err(|e| crate::Error::DockerCompose(e.to_string()))?;
+
+        serde_json::from_slice(&output.stdout)
+            .map_err(|e| crate::Error::DockerCompose(e.to_string()))
+    }
+}
+
+pub struct ServicePort {
+    pub port: u16,
+    pub exposed_port: u16,
+}
+
+impl ServicePort {
+    pub fn new(port: u16, exposed_port: u16) -> Self {
+        Self { port, exposed_port }
+    }
+
+    pub fn url(&self) -> String {
+        format!("http://localhost:{}", self.exposed_port)
+    }
+}
 
 pub struct Service {
     pub name: String,
     pub service: String,
-    pub published_ports: Vec<u16>,
+    pub state: String,
+    pub ports: Vec<ServicePort>,
 }
 
 impl Service {
-    pub fn new(name: String, service: String, published_ports: Vec<u16>) -> Self {
+    pub fn new(name: String, service: String, state: String, ports: Vec<ServicePort>) -> Self {
         Self {
             name,
             service,
-            published_ports,
+            state,
+            ports,
         }
     }
 }
@@ -27,10 +68,10 @@ impl<'de> serde::Deserialize<'de> for Service {
             .publishers
             .unwrap_or(Vec::new())
             .into_iter()
-            .map(|p| p.published_port)
+            .map(|p| ServicePort::new(p.target_port, p.published_port))
             .collect();
 
-        let svc = Self::new(svc_json.name, svc_json.service, ports);
+        let svc = Self::new(svc_json.name, svc_json.service, svc_json.state, ports);
 
         Ok(svc)
     }
@@ -39,67 +80,64 @@ impl<'de> serde::Deserialize<'de> for Service {
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 struct PublisherJSON {
-    pub published_port: u16,
+    target_port: u16,
+    published_port: u16,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 struct ServiceJSON {
-    pub name: String,
-    pub service: String,
-    pub publishers: Option<Vec<PublisherJSON>>,
+    name: String,
+    service: String,
+    state: String,
+    publishers: Option<Vec<PublisherJSON>>,
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn deserialize_service() {
-        let services: Vec<super::Service> = serde_json::from_str(
-            r#"
-            [
-              {
-                "ID": "1553b0236cf4d2715845f053a4ee97042c4f9a2ef655731ee34f1f7940eaa41a",
-                "Name": "example-bar-1",
-                "Command": "/docker-entrypoint.sh nginx -g daemon off;",
-                "Project": "example",
-                "Service": "bar",
-                "State": "exited",
-                "Health": "",
-                "ExitCode": 0,
-                "Publishers": null
-              },
-              {
-                "ID": "f02a4efaabb67416e1ff127d51c4b5578634a0ad5743bd65225ff7d1909a3fa0",
-                "Name": "example-foo-1",
-                "Command": "/docker-entrypoint.sh nginx -g daemon off;",
-                "Project": "example",
-                "Service": "foo",
-                "State": "running",
-                "Health": "",
-                "ExitCode": 0,
-                "Publishers": [
-                  {
-                    "URL": "0.0.0.0",
-                    "TargetPort": 80,
-                    "PublishedPort": 8080,
-                    "Protocol": "tcp"
-                  }
-                ]
-              }
-            ]
-        "#,
-        )
-        .expect("failed to parse JSON");
+    fn service_deserialize_json() {
+        let services: Vec<super::Service> =
+            serde_json::from_str(include_str!("../testdata/containers.json"))
+                .expect("failed to parse JSON");
 
         assert_eq!(2, services.len());
 
         assert_eq!("example-bar-1", services[0].name);
         assert_eq!("bar", services[0].service);
-        assert_eq!(0, services[0].published_ports.len());
+        assert_eq!("exited", services[0].state);
+        assert_eq!(0, services[0].ports.len());
 
         assert_eq!("example-foo-1", services[1].name);
         assert_eq!("foo", services[1].service);
-        assert_eq!(1, services[1].published_ports.len());
-        assert_eq!(8080, services[1].published_ports[0]);
+        assert_eq!("running", services[1].state);
+        assert_eq!(1, services[1].ports.len());
+        assert_eq!(80, services[1].ports[0].port);
+        assert_eq!(8080, services[1].ports[0].exposed_port);
+        assert_eq!("http://localhost:8080", services[1].ports[0].url());
+    }
+
+    #[test]
+    fn command_list_services() {
+        let cmd = super::Command {
+            path: "testdata/docker-compose-mock".to_string(),
+        };
+
+        let services = cmd.list_services().expect("failed to execute mock");
+
+        assert_eq!(2, services.len());
+
+        assert_eq!("example-bar-1", services[0].name);
+        assert_eq!("bar", services[0].service);
+        assert_eq!("exited", services[0].state);
+        assert_eq!(0, services[0].ports.len());
+
+        assert_eq!("example-foo-1", services[1].name);
+        assert_eq!("foo", services[1].service);
+        assert_eq!("running", services[1].state);
+        assert_eq!(1, services[1].ports.len());
+        assert_eq!(80, services[1].ports[0].port);
+        assert_eq!(8080, services[1].ports[0].exposed_port);
+        assert_eq!("http://localhost:8080", services[1].ports[0].url());
     }
 }
