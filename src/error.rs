@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum Error {
     DockerCompose(String),
+    Fzf(String),
 }
 
 impl std::fmt::Display for Error {
@@ -8,6 +9,9 @@ impl std::fmt::Display for Error {
         match self {
             Self::DockerCompose(err) => {
                 write!(f, "failed to get processes from docker-compose: {}", err)
+            }
+            Self::Fzf(err) => {
+                write!(f, "failed to execute fzf: {}", err)
             }
         }
     }
