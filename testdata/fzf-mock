@@ -5,8 +5,9 @@ set -o errexit
 set -o nounset
 
 expected=$(cat <<EOF
-web:80            [running]  http://localhost:8080
-documentation:80  [exited]   http://localhost:8081
+foo:80     [running]  http://localhost:8080
+foobar:81  [exited]   http://localhost:8081
+foobar:82  [exited]   http://localhost:8082
 EOF
 )
 actual=$(</dev/stdin);

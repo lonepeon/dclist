@@ -1,18 +1,13 @@
 use std::io::Write;
 
-pub struct Command {
-    pub path: String,
+pub struct Command<'a> {
+    pub path: &'a str,
 }
 
-impl Default for Command {
-    fn default() -> Self {
-        Self {
-            path: "fzf".to_string(),
-        }
+impl<'a> Command<'a> {
+    pub fn new(path: &'a str) -> Self {
+        Self { path }
     }
-}
-
-impl Command {
     pub fn execute(&self, suggestions: &[String]) -> Result<(), crate::Error> {
         let data = suggestions.join("\n");
 
@@ -40,16 +35,23 @@ impl Command {
             "failed to get ouput from column program".to_string(),
         ))?;
 
-        std::process::Command::new(&self.path)
+        let status = std::process::Command::new(self.path)
             .arg("--bind")
-            .arg("enter:execute(open {3})+abort")
+            .arg("enter:execute(open {3})+accept")
             .stdin(std::process::Stdio::from(column_output))
             .spawn()
             .map_err(|e| crate::Error::Fzf(format!("failed to spawn fzf program: {}", e)))?
             .wait()
             .map_err(|e| {
-                crate::Error::Fzf(format!("failed to wait for user inpur in fzf: {}", e))
+                crate::Error::Fzf(format!("failed to wait for fzf program to finish: {}", e))
             })?;
+
+        if !status.success() {
+            return Err(crate::Error::Fzf(format!(
+                "fzf exited with code {}",
+                status.code().unwrap(),
+            )));
+        }
 
         Ok(())
     }
@@ -58,20 +60,13 @@ impl Command {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn command_default() {
-        let cmd = super::Command::default();
-        assert_eq!("fzf", cmd.path)
-    }
-
-    #[test]
     fn execute_command() {
-        let cmd = super::Command {
-            path: "testdata/fzf-mock".to_string(),
-        };
+        let cmd = super::Command::new("testdata/fzf-mock");
 
         let data = vec![
-            "web:80 [running] http://localhost:8080".to_string(),
-            "documentation:80 [exited] http://localhost:8081".to_string(),
+            "foo:80     [running]  http://localhost:8080".to_string(),
+            "foobar:81  [exited]   http://localhost:8081".to_string(),
+            "foobar:82  [exited]   http://localhost:8082".to_string(),
         ];
 
         cmd.execute(&data).expect("failed to execute fzf");

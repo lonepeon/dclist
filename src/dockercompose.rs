@@ -1,18 +1,14 @@
-pub struct Command {
-    pub path: String,
+pub struct Command<'a> {
+    pub path: &'a str,
 }
 
-impl Default for Command {
-    fn default() -> Self {
-        Self {
-            path: "docker-compose".to_string(),
-        }
+impl<'a> Command<'a> {
+    pub fn new(path: &'a str) -> Self {
+        Self { path }
     }
-}
 
-impl Command {
     pub fn list_services(&self) -> Result<Vec<Service>, crate::Error> {
-        let output = std::process::Command::new(&self.path)
+        let output = std::process::Command::new(self.path)
             .arg("ps")
             .arg("--format")
             .arg("json")
@@ -96,18 +92,12 @@ struct ServiceJSON {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn command_default() {
-        let cmd = super::Command::default();
-        assert_eq!("docker-compose", cmd.path)
-    }
-
-    #[test]
     fn service_deserialize_json() {
         let services: Vec<super::Service> =
             serde_json::from_str(include_str!("../testdata/containers.json"))
                 .expect("failed to parse JSON");
 
-        assert_eq!(2, services.len());
+        assert_eq!(3, services.len());
 
         assert_eq!("example-bar-1", services[0].name);
         assert_eq!("bar", services[0].service);
@@ -121,17 +111,25 @@ mod tests {
         assert_eq!(80, services[1].ports[0].port);
         assert_eq!(8080, services[1].ports[0].exposed_port);
         assert_eq!("http://localhost:8080", services[1].ports[0].url());
+        assert_eq!("example-foobar-1", services[2].name);
+        assert_eq!("foobar", services[2].service);
+        assert_eq!("exited", services[2].state);
+        assert_eq!(2, services[2].ports.len());
+        assert_eq!(81, services[2].ports[0].port);
+        assert_eq!(8081, services[2].ports[0].exposed_port);
+        assert_eq!("http://localhost:8081", services[2].ports[0].url());
+        assert_eq!(82, services[2].ports[1].port);
+        assert_eq!(8082, services[2].ports[1].exposed_port);
+        assert_eq!("http://localhost:8082", services[2].ports[1].url());
     }
 
     #[test]
     fn command_list_services() {
-        let cmd = super::Command {
-            path: "testdata/docker-compose-mock".to_string(),
-        };
+        let cmd = super::Command::new("testdata/docker-compose-mock");
 
         let services = cmd.list_services().expect("failed to execute mock");
 
-        assert_eq!(2, services.len());
+        assert_eq!(3, services.len());
 
         assert_eq!("example-bar-1", services[0].name);
         assert_eq!("bar", services[0].service);
@@ -145,5 +143,16 @@ mod tests {
         assert_eq!(80, services[1].ports[0].port);
         assert_eq!(8080, services[1].ports[0].exposed_port);
         assert_eq!("http://localhost:8080", services[1].ports[0].url());
+
+        assert_eq!("example-foobar-1", services[2].name);
+        assert_eq!("foobar", services[2].service);
+        assert_eq!("exited", services[2].state);
+        assert_eq!(2, services[2].ports.len());
+        assert_eq!(81, services[2].ports[0].port);
+        assert_eq!(8081, services[2].ports[0].exposed_port);
+        assert_eq!("http://localhost:8081", services[2].ports[0].url());
+        assert_eq!(82, services[2].ports[1].port);
+        assert_eq!(8082, services[2].ports[1].exposed_port);
+        assert_eq!("http://localhost:8082", services[2].ports[1].url());
     }
 }

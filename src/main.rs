@@ -1,24 +1,11 @@
+use clap::Parser;
+
 fn main() -> Result<(), dclist::Error> {
-    let compose = dclist::dockercompose::Command::default();
-    let fzf = dclist::fzf::Command::default();
+    let rst = dclist::cli::Cli::parse().execute();
+    if let Some(error) = rst.err() {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
 
-    let formatted_data = compose
-        .list_services()?
-        .into_iter()
-        .fold(Vec::new(), |mut data, s| {
-            data.append(s.ports.into_iter().fold(&mut Vec::new(), |d, p| {
-                d.push(format!(
-                    "{}:{} [{}] {}",
-                    s.service,
-                    p.port,
-                    s.state,
-                    p.url()
-                ));
-                d
-            }));
-
-            data
-        });
-
-    fzf.execute(&formatted_data)
+    Ok(())
 }

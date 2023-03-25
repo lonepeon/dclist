@@ -27,5 +27,29 @@
         "Protocol": "tcp"
       }
     ]
+  },
+  {
+    "ID": "f02a4efaabb67416e1ff127d51c4b5578634a0ad5743bd65225ff7d1909a3fa0",
+    "Name": "example-foobar-1",
+    "Command": "/docker-entrypoint.sh nginx -g daemon off;",
+    "Project": "example",
+    "Service": "foobar",
+    "State": "exited",
+    "Health": "",
+    "ExitCode": 0,
+    "Publishers": [
+      {
+        "URL": "0.0.0.0",
+        "TargetPort": 81,
+        "PublishedPort": 8081,
+        "Protocol": "tcp"
+      },
+      {
+        "URL": "0.0.0.0",
+        "TargetPort": 82,
+        "PublishedPort": 8082,
+        "Protocol": "tcp"
+      }
+    ]
   }
 ]
