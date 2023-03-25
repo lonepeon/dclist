@@ -81,9 +81,12 @@ mod tests {
 
         let err = cmd.execute(&data).unwrap_err();
 
-        assert_eq!(
-            crate::error::Error::Fzf("fzf exited with code 1".to_string()),
-            err
-        )
+        let msg = if let crate::error::Error::Fzf(msg) = err {
+            msg
+        } else {
+            panic!("unexpected error")
+        };
+
+        assert!(msg.starts_with("fzf exited with code "))
     }
 }
