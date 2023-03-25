@@ -9,7 +9,8 @@ impl<'a> Command<'a> {
         Self { path }
     }
     pub fn execute(&self, suggestions: &[String]) -> Result<(), crate::Error> {
-        let data = suggestions.join("\n");
+        let mut data = suggestions.join("\n");
+        data.push('\n');
 
         let mut column_cmd = std::process::Command::new("column")
             .arg("-t")
