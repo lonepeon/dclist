@@ -2,7 +2,14 @@
 
 # dclist
 
-A fuzzy finder to open any docker-compose exposed service.
+A fuzzy finder to open any docker-compose exposed service. This tool is helpful
+when juggling with a lot of different projects which does not reuse the same
+ports. Remembering the exposed ports per projet is not manageable.
+
+Preview of the CLI output. When selecting one of the line below, it opens the
+URL to the browser.
+
+![preview](assets/preview.png)
 
 CLI usage is shown with `--help`
 
