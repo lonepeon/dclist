@@ -61,7 +61,7 @@ impl<'a> Command<'a> {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn execute_command() {
+    fn execute_command_success() {
         let cmd = super::Command::new("testdata/fzf-mock");
 
         let data = vec![
@@ -71,5 +71,19 @@ mod tests {
         ];
 
         cmd.execute(&data).expect("failed to execute fzf");
+    }
+
+    #[test]
+    fn execute_command_fail() {
+        let cmd = super::Command::new("testdata/fzf-failing-mock");
+
+        let data = vec![];
+
+        let err = cmd.execute(&data).unwrap_err();
+
+        assert_eq!(
+            crate::error::Error::Fzf("fzf exited with code 1".to_string()),
+            err
+        )
     }
 }
