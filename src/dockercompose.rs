@@ -96,6 +96,12 @@ struct ServiceJSON {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn command_default() {
+        let cmd = super::Command::default();
+        assert_eq!("docker-compose", cmd.path)
+    }
+
+    #[test]
     fn service_deserialize_json() {
         let services: Vec<super::Service> =
             serde_json::from_str(include_str!("../testdata/containers.json"))

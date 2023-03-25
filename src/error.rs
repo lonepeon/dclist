@@ -18,3 +18,24 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn error_displat_docker_compose() {
+        let err = super::Error::DockerCompose("some explanation".to_string());
+        assert_eq!(
+            "failed to get processes from docker-compose: some explanation",
+            format!("{}", err)
+        )
+    }
+
+    #[test]
+    fn error_displat_fzf() {
+        let err = super::Error::Fzf("some explanation".to_string());
+        assert_eq!(
+            "failed to execute fzf: some explanation",
+            format!("{}", err)
+        )
+    }
+}

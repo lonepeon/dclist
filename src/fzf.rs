@@ -58,6 +58,12 @@ impl Command {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn command_default() {
+        let cmd = super::Command::default();
+        assert_eq!("fzf", cmd.path)
+    }
+
+    #[test]
     fn execute_command() {
         let cmd = super::Command {
             path: "testdata/fzf-mock".to_string(),
