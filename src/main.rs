@@ -1,6 +1,6 @@
-fn main() -> Result<(), docker_compose_portlist::Error> {
-    let compose = docker_compose_portlist::dockercompose::Command::default();
-    let fzf = docker_compose_portlist::fzf::Command::default();
+fn main() -> Result<(), dclist::Error> {
+    let compose = dclist::dockercompose::Command::default();
+    let fzf = dclist::fzf::Command::default();
 
     let formatted_data = compose
         .list_services()?

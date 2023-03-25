@@ -1,5 +1,5 @@
 [package]
-name = "docker-compose-portlist"
+name = "dclist"
 version = "0.1.0"
 edition = "2021"
 
