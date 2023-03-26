@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 #[derive(clap::Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -21,28 +19,7 @@ impl Cli {
     pub fn execute(&self) -> Result<(), crate::Error> {
         let compose = crate::dockercompose::Command::new(&self.docker_compose_path);
         let fzf = crate::fzf::Command::new(&self.fzf_path);
-
-        let formatted_data = compose
-            .list_services()?
-            .into_iter()
-            .fold(Vec::new(), |mut data, s| {
-                data.append(s.ports.into_iter().fold(&mut Vec::new(), |d, p| {
-                    d.push(format!(
-                        "{}:{} [{}] {}",
-                        s.service,
-                        p.port,
-                        s.state,
-                        p.url()
-                    ));
-                    d
-                }));
-
-                data
-            })
-            .into_iter()
-            .sorted()
-            .unique()
-            .collect_vec();
+        let formatted_data = crate::fzf::format_commands(&compose.list_services()?);
 
         fzf.execute(&formatted_data)
     }

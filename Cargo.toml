@@ -1,8 +1,8 @@
 [package]
-name = "dclist"
+name = "fzf-dclist"
 version = "0.1.0"
 edition = "2021"
-description = "a fuzzy finder to open any docker-compose exposed service."
+description = "a fuzzy finder to print commands to run on any docker-compose exposed service."
 
 [dependencies]
 clap = { version = "4.1.13", features = ["derive"] }

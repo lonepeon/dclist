@@ -51,16 +51,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dclist"
-version = "0.1.0"
-dependencies = [
- "clap",
- "itertools",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "either"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -85,6 +75,16 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "fzf-dclist"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "itertools",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
