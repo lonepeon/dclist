@@ -17,9 +17,9 @@ jobs:
       - name: install stable
         uses: dtolnay/rust-toolchain@stable
       - name: build application
-        run: VERSION=${{ github.ref_name }} cargo build --verbose --release
+        run: VERSION=${{ github.ref_name }} RUSTFLAGS='-C target-feature=+crt-static' cargo build --verbose --release --target x86_64-unknown-linux-gnu
       - name: rename binary
-        run: mv target/release/fzf-dclist fzf-dclist-linux-amd64-${{ github.ref_name }}
+        run: mv target/x86_64-unknown-linux-gnu/release/fzf-dclist fzf-dclist-linux-amd64-${{ github.ref_name }}
       - name: create release with binaries
         uses: softprops/action-gh-release@v1
         with:
