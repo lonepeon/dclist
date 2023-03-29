@@ -1,0 +1,10 @@
+command = "default command"
+
+[services.foobar]
+command = "default foobar command"
+
+[services.foobar.ports.81]
+command = "command for foobar:81"
+
+[services.foobar.ports.82]
+command = "command for foobar:82"

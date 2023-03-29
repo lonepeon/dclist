@@ -1,0 +1,8 @@
+this:
+  is: a
+  yaml: file
+and:
+  - not
+  - a
+  - toml
+  - file
