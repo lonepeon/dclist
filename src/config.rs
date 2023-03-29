@@ -12,12 +12,24 @@ struct Service {
 }
 
 #[derive(serde::Deserialize, Debug)]
-pub struct Config {
+pub struct Config<'a> {
+    #[serde(skip)]
+    tmpl_registry: handlebars::Handlebars<'a>,
     command: Option<String>,
     services: Option<std::collections::HashMap<String, Service>>,
 }
 
-impl Config {
+impl<'a> std::default::Default for Config<'a> {
+    fn default() -> Self {
+        Self {
+            tmpl_registry: handlebars::Handlebars::new(),
+            command: None,
+            services: None,
+        }
+    }
+}
+
+impl<'a> Config<'a> {
     pub fn from_toml(path: &str) -> Result<Self, crate::error::Error> {
         let mut config_content = String::new();
 
@@ -28,7 +40,17 @@ impl Config {
         toml::from_str(&config_content).map_err(|e| crate::error::Error::Config(e.to_string()))
     }
 
-    pub fn command_template(&self, service_name: &str, internal_port: u16) -> Option<&str> {
+    pub fn render(&self, service_name: &str, internal_port: u16, exposed_port: u16) -> String {
+        let tmpl = self
+            .command_template(service_name, internal_port)
+            .unwrap_or("open http://localhost:{{exposed_port}}");
+
+        self.tmpl_registry
+            .render_template(tmpl, &serde_json::json!({ "exposed_port": exposed_port }))
+            .unwrap_or_else(|e| e.to_string())
+    }
+
+    fn command_template(&self, service_name: &str, internal_port: u16) -> Option<&str> {
         let port_name = internal_port.to_string();
 
         self.services
@@ -55,26 +77,26 @@ mod tests {
             super::Config::from_toml("testdata/config.toml").expect("failed to parse config file");
 
         assert_eq!(
-            Some("default command"),
-            config.command_template("unknown-service", 8080),
+            "default command",
+            config.render("unknown-service", 8080, 10001),
             "undefined service should rely on default command"
         );
 
         assert_eq!(
-            Some("command for foobar:81"),
-            config.command_template("foobar", 81),
+            "command for foobar:81 => 10002",
+            config.render("foobar", 81, 10002),
             "defined service/port port should use specific command"
         );
 
         assert_eq!(
-            Some("command for foobar:82"),
-            config.command_template("foobar", 82),
+            "command for foobar:82 => 10003",
+            config.render("foobar", 82, 10003),
             "defined service/port port should use specific command"
         );
 
         assert_eq!(
-            Some("default foobar command"),
-            config.command_template("foobar", 1000),
+            "default foobar command",
+            config.render("foobar", 1000, 10003),
             "unknown port should fallback on default service command"
         );
     }
@@ -84,21 +106,34 @@ mod tests {
         let config = super::Config::from_toml("testdata/config-no-default.toml")
             .expect("failed to parse config file");
 
-        assert!(
-            config.command_template("unknown-service", 8080).is_none(),
+        assert_eq!(
+            "open http://localhost:10001",
+            config.render("unknown-service", 8080, 10001),
             "undefined service and no default command should return none"
         );
 
         assert_eq!(
-            Some("command for foobar:81"),
-            config.command_template("foobar", 81),
+            "command for foobar:81",
+            config.render("foobar", 81, 10002),
             "defined service/port port should use specific command"
         );
 
         assert_eq!(
-            Some("command for foobar:82"),
-            config.command_template("foobar", 82),
+            "command for foobar:82",
+            config.render("foobar", 82, 10003),
             "defined service/port port should use specific command"
+        );
+    }
+
+    #[test]
+    fn config_from_toml_unparsable_command() {
+        let config = super::Config::from_toml("testdata/config-unparsable-command.toml")
+            .expect("failed to parse config file");
+
+        assert_eq!(
+            "Failed to parse template.",
+            config.render("unknown-service", 8080, 10001),
+            "unparsable command should display error"
         );
     }
 

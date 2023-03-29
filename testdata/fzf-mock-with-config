@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+
+expected=$(cat <<EOF
+foo:80    [running] default command
+foobar:81 [exited]  command for foobar:81 => 8081
+foobar:82 [exited]  command for foobar:82 => 8082
+EOF
+)
+actual=$(</dev/stdin);
+
+diff <(echo "${expected}") <(echo "${actual}")

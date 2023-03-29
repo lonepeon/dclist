@@ -46,7 +46,10 @@ impl<'a> Command<'a> {
     }
 }
 
-pub fn format_commands(services: &[crate::dockercompose::Service]) -> Vec<String> {
+pub fn format_commands(
+    cfg: &crate::config::Config,
+    services: &[crate::dockercompose::Service],
+) -> Vec<String> {
     struct Fields {
         service: String,
         state: String,
@@ -59,7 +62,7 @@ pub fn format_commands(services: &[crate::dockercompose::Service]) -> Vec<String
             service.ports.iter().map(|port| Fields {
                 service: format!("{}:{}", service.service, port.port),
                 state: service.state.clone(),
-                cmd: format!("open {}", port.url()),
+                cmd: cfg.render(&service.service, port.port, port.exposed_port),
             })
         })
         .collect_vec();

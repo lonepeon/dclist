@@ -23,10 +23,35 @@ Options:
           path to the docker compose binary [default: docker-compose]
       --fzf-path <FZF_PATH>
           path to the fzf binary [default: fzf]
+  -c, --config-path <CONFIG_PATH>
+          path to a config file
   -h, --help
           Print help
   -V, --version
           Print version
+```
+
+## Config
+
+By default, the CLI generates a `open http://localhost:<port>` command but sometimes we need to set a specialized command. For such usecases, a TOML config file can be given when running the program.
+
+Below the format of the file:
+
+```toml
+# file:config.toml
+# available variable are:
+# - {{exposed_port}}: the docker-compose service port exposed to the host
+
+# default command to use if nothing else matches
+command = "open http://localhost:{{exposed_port}}"
+
+# command to use for all my-service services if nothing more specific matches
+[services.my-service]
+command = "my-specific-command localhost {{exposed_port}}"
+
+# command to use for all my-service services running on internal port 8080
+[services.my-service.ports.8080]
+command = "more-specific-command localhost {{exposed_port}}"
 ```
 
 ## Installation

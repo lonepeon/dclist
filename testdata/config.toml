@@ -4,7 +4,7 @@ command = "default command"
 command = "default foobar command"
 
 [services.foobar.ports.81]
-command = "command for foobar:81"
+command = "command for foobar:81 => {{exposed_port}}"
 
 [services.foobar.ports.82]
-command = "command for foobar:82"
+command = "command for foobar:82 => {{exposed_port}}"
